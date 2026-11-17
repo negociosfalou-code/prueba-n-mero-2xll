@@ -146,6 +146,17 @@ func dialogue_line(speaker: Dictionary, listener: Dictionary,
 	return line
 
 
+## Respuesta del agente cuando el jugador le da una idea.
+func idea_ack(idea: String) -> String:
+	var roll := _rng.randf()
+	if roll < 0.5:
+		return _pick(IDEA_ACKS)
+	var line := generate(PackedStringArray(["buena", "idea"]))
+	if line.length() < 12:
+		return _pick(IDEA_ACKS)
+	return line
+
+
 ## Pensamiento interno de un agente.
 func thought(agent: Dictionary, location_name: String) -> String:
 	var roll := _rng.randf()
@@ -240,6 +251,14 @@ const PLANS := [
 	"Después quiero probar {tema}, ¿te vienes?",
 	"Mañana empiezo temprano con {actividad}.",
 	"Al final del día suelo descansar mirando {tema}.",
+]
+
+const IDEA_ACKS := [
+	"¡Buena idea! Voy enseguida.",
+	"¡Me encanta! Me pongo con eso ahora mismo.",
+	"¡Qué buena idea! Gracias por sugerírmela.",
+	"Bueno, ¿por qué no? Voy a intentarlo.",
+	"¡Vale! Suena a un plan estupendo.",
 ]
 
 const THOUGHTS := [

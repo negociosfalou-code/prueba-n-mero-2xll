@@ -80,7 +80,16 @@ func _on_game_minute() -> void:
 		a.conv_cooldown = maxf(a.conv_cooldown - 1.0, 0.0)
 		a.thought_cooldown = maxf(a.thought_cooldown - 1.0, 0.0)
 		a.wander_cooldown = maxf(a.wander_cooldown - 1.0, 0.0)
-		if a.state == Agent.State.SLEEPING or a.is_player_controlled:
+		if a.state == Agent.State.SLEEPING:
+			continue
+		if a.current_idea != "":
+			if Game.minutes > a.idea_until:
+				a.clear_idea()
+			elif a.state == Agent.State.IDLE:
+				_idea_step(a)
+		if a.is_player_controlled:
+			continue
+		if a.current_idea != "":
 			continue
 		var want: String = a.scheduled_building(hour, Game.day)
 		if want != a.target_building and a.state != Agent.State.TALKING:
@@ -97,6 +106,58 @@ func _on_game_minute() -> void:
 	if _conv_accum >= 2.0:
 		_conv_accum = 0.0
 		_match_conversations()
+
+
+func _agent_by_name(agent_name: String) -> Agent:
+	for a in agents:
+		if a.persona["name"] == agent_name:
+			return a
+	return null
+
+
+## Ejecuta la idea activa: acercarse a la persona sugerida o ir al lugar.
+func _idea_step(a: Agent) -> void:
+	if a.idea_person != "":
+		var target := _agent_by_name(a.idea_person)
+		if target == null or target.state == Agent.State.SLEEPING:
+			return
+		var dist := a.position.distance_to(target.position) / TownMap.TILE
+		if dist <= CONV_DIST_TILES:
+			if _not_available(a) or _not_available(target):
+				return
+			_start_conversation(a, target)
+			a.clear_idea(true)
+		else:
+			a.set_dest(town.nearest_walkable(town.to_tile(target.position)))
+		return
+	if a.idea_dest == "":
+		a.idea_dest = a.location_from_idea(a.current_idea.to_lower())
+	if a.idea_dest == "":
+		a.idea_dest = "hobbs_cafe" if randf() < 0.5 else "park"
+	var dest: String = a.idea_dest
+	if town.building_at(a.current_tile) == dest:
+		if town.buildings.has(dest):
+			a.set_dest(town.random_point_in_building(dest))
+		else:
+			a.set_dest(town.random_point_in_park() if randf() < 0.5
+					else town.random_bench())
+		return
+	var ya_en_camino: bool = a.target_building == dest
+	a.idea_dest = ""
+	a.go_to_building(dest)
+	if not ya_en_camino:
+		a.add_memory("idea", "Voy a %s por mi idea: %s" %
+				[town.building_display_name(dest), a.current_idea],
+				Game.hour(), Game.day)
+
+
+func give_idea(a: Agent, text: String) -> void:
+	a.receive_idea(text)
+	hud.push_log("[color=#b6e3a1]💡 Le sugieres a %s: %s[/color]" %
+			[a.persona["name"], text])
+	a.say(llm.idea_ack(text))
+	if a == selected_agent:
+		hud.refresh_panel()
 
 
 func _wander(a: Agent) -> void:
@@ -135,7 +196,9 @@ func _on_hour_changed(hour: int) -> void:
 			a.target_building = a.persona["home"]
 		else:
 			a.set_sleeping(false)
-			a.go_to_building(a.scheduled_building(hour, Game.day))
+			a.extend_idea_timeout()
+			if a.current_idea == "":
+				a.go_to_building(a.scheduled_building(hour, Game.day))
 
 
 func _match_conversations() -> void:
@@ -175,6 +238,10 @@ func _start_conversation(a: Agent, b: Agent) -> void:
 	var loc_id := town.building_at(a.current_tile)
 	var loc := town.building_display_name(loc_id if loc_id != "" else "street")
 	var shared := _shared_topic(a.persona, b.persona)
+	if a.current_idea != "":
+		shared.push_front(a.current_idea)
+	if b.current_idea != "":
+		shared.push_front(b.current_idea)
 	var turns := randi_range(3, 5)
 	var speaker := a
 	var listener := b

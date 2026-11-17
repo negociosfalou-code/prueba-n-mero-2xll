@@ -28,6 +28,12 @@ var activity := "Despierto"
 var is_player_controlled := false
 var _bubble_timer := 0.0
 
+var ideas: Array = []
+var current_idea := ""
+var idea_person := ""
+var idea_dest := ""
+var idea_until := 0.0
+
 
 func setup(p: Dictionary, t: TownMap, model: MiniLLM) -> void:
 	persona = p
@@ -40,6 +46,68 @@ func setup(p: Dictionary, t: TownMap, model: MiniLLM) -> void:
 		if other["name"] != p["name"]:
 			var seed_pair: int = hash(String(p["name"]) + String(other["name"]))
 			relationships[other["name"]] = float(seed_pair % 100) / 50.0 - 1.0
+
+
+## El jugador le sugiere una idea al agente.
+func receive_idea(text: String) -> void:
+	ideas.append(text)
+	if ideas.size() > 10:
+		ideas.pop_front()
+	current_idea = text
+	idea_person = ""
+	idea_dest = ""
+	var lower := text.to_lower()
+	for other in Personas.all():
+		var n := String(other["name"]).to_lower()
+		var first := n.split(" ")[0]
+		if other["name"] != persona["name"] \
+				and (lower.find(n) != -1 or (first.length() > 2 and lower.find(first) != -1)):
+			idea_person = other["name"]
+			break
+	if idea_person == "":
+		idea_dest = location_from_idea(lower)
+	idea_until = Game.minutes + 480.0
+	add_memory("idea", "Nueva idea: " + text, Game.hour(), Game.day)
+
+
+func extend_idea_timeout() -> void:
+	if current_idea != "":
+		idea_until = maxf(idea_until, Game.minutes + 240.0)
+
+
+func clear_idea(completed: bool = false) -> void:
+	if current_idea != "":
+		var texto := "Cumplí mi idea: " if completed else "Dejé la idea: "
+		add_memory("idea", texto + current_idea, Game.hour(), Game.day)
+	current_idea = ""
+	idea_person = ""
+	idea_dest = ""
+
+
+static func _has_any(text: String, words: Array) -> bool:
+	for w in words:
+		if text.find(String(w)) != -1:
+			return true
+	return false
+
+
+func location_from_idea(lower: String) -> String:
+	if _has_any(lower, ["café", "cafe", "cafetería", "cafeteria", "desayunar", "comer"]):
+		return "hobbs_cafe"
+	if _has_any(lower, ["biblioteca", "libro", "leer", "poesía", "poesia"]):
+		return "library"
+	if _has_any(lower, ["escuela", "clase", "estudiar", "examen"]):
+		return "school"
+	if _has_any(lower, ["tienda", "comprar", "mercado"]):
+		return "store"
+	if _has_any(lower, ["parque", "fuente", "banco", "pasear", "correr",
+			"jardín", "jardin", "lago"]):
+		return "park"
+	if _has_any(lower, ["casa", "dormir", "descansar"]):
+		return persona["home"]
+	if _has_any(lower, ["trabajar"]):
+		return persona["work"]
+	return ""
 
 
 func _process(delta: float) -> void:

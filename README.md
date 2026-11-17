@@ -48,6 +48,7 @@ Resumen; la guía completa está en [docs/EXPORTAR_ANDROID.md](docs/EXPORTAR_AND
 | Zoom | Pellizco / botones ＋－ | Botones ＋－ |
 | Pausa / reanudar | Botones ▶ ⏸ | Barra espaciadora |
 | Ver info de agente | Panel derecho | `Esc` oculta/muestra |
+| Dar una idea a un agente | Ficha → campo "Darle una idea" | Igual + Enter |
 
 ## Estructura
 

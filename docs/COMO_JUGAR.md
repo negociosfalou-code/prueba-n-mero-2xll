@@ -27,6 +27,23 @@ que corre dentro de tu móvil.
 - Cada agente también tiene **pensamientos** espontáneos que se guardan
   en su memoria.
 
+## Dar ideas a los habitantes
+
+En la ficha de cualquier habitante (tócalo) tienes el campo **"Darle una
+idea"**. Escribe lo que quieras en lenguaje natural y pulsa **💡 Sugerir**:
+
+- Si mencionas un **lugar** (café, biblioteca, escuela, tienda, parque,
+  casa…), el agente irá allí y se quedará un rato.
+- Si mencionas el **nombre de otro habitante** (ej. "visita a Klaus"),
+  el agente lo buscará por el pueblo, hablará con él sobre tu idea y la
+  dará por cumplida.
+- **Cualquier otra idea** (ej. "aprender a tocar la guitarra") se convierte
+  en su plan activo: la pensará, la mencionará en sus conversaciones y
+  visitará lugares relacionados.
+- El agente responde con un globo al recibir la idea, la guarda en su
+  memoria ("Nueva idea: …") y la mantiene hasta 8 horas de juego o hasta
+  cumplirla. Si una conversación lo interrumpe, la reanuda solo.
+
 ## Botones
 
 | Botón | Función |

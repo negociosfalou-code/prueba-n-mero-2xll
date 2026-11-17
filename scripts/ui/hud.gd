@@ -11,6 +11,7 @@ var _info_vbox: VBoxContainer
 var _log_panel: PanelContainer
 var _log_label: RichTextLabel
 var _control_button: Button
+var _idea_edit: LineEdit
 var _panel_hidden := false
 var _refresh_accum := 0.0
 var _log_lines: Array = []
@@ -127,6 +128,8 @@ func refresh_panel() -> void:
 	if a == null:
 		_info_panel.visible = false
 		return
+	if _idea_edit != null and _idea_edit.has_focus():
+		return
 	_info_panel.visible = not _panel_hidden
 	for c in _info_vbox.get_children():
 		c.queue_free()
@@ -158,6 +161,33 @@ func refresh_panel() -> void:
 	_control_button.disabled = a.is_player_controlled
 	_control_button.pressed.connect(func(): main.control_agent(a))
 	_info_vbox.add_child(_control_button)
+
+	_info_vbox.add_child(_label("Darle una idea (lugar, persona o plan):"))
+	var idea_row := HBoxContainer.new()
+	idea_row.add_theme_constant_override("separation", 6)
+	_idea_edit = LineEdit.new()
+	_idea_edit.placeholder_text = "Ej: visita a Klaus en la biblioteca"
+	_idea_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_idea_edit.custom_minimum_size = Vector2(0, 40)
+	_idea_edit.clear_button_enabled = true
+	idea_row.add_child(_idea_edit)
+	var idea_btn := Button.new()
+	idea_btn.text = "💡 Sugerir"
+	idea_btn.custom_minimum_size = Vector2(90, 40)
+	var _send_idea := func():
+		var t := _idea_edit.text.strip_edges()
+		if t != "" and main.selected_agent != null:
+			main.give_idea(main.selected_agent, t)
+			_idea_edit.clear()
+	idea_btn.pressed.connect(_send_idea)
+	_idea_edit.text_submitted.connect(func(_t): _send_idea.call())
+	idea_row.add_child(idea_btn)
+	_info_vbox.add_child(idea_row)
+
+	if a.current_idea != "":
+		var idea_now := _label("💡 Idea actual: %s" % a.current_idea)
+		idea_now.add_theme_color_override("font_color", Color(0.72, 0.89, 0.63))
+		_info_vbox.add_child(idea_now)
 
 	_info_vbox.add_child(_label("Relaciones:"))
 	for pair in a.top_relationships(3):

@@ -72,29 +72,24 @@ func _build_grid() -> void:
 				grid[y][x] = T.WALL if on_border else T.FLOOR
 		grid[b.door.y][b.door.x] = T.DOOR
 
-	# Caminos principales.
+	# Caminos principales (filas 11, 22 y 32; columnas 16 y 32).
 	for x in range(2, W - 2):
 		grid[11][x] = T.PATH
 		grid[22][x] = T.PATH
+		grid[32][x] = T.PATH
 	for y in range(2, H - 2):
 		grid[y][16] = T.PATH
 		grid[y][32] = T.PATH
 
-	# Conectar cada puerta con el camino más cercano (en L).
+	# Conectar cada puerta hacia abajo con la primera fila de camino:
+	# todas las puertas dan al sur y siempre hay un camino por debajo.
 	for b_id in buildings:
 		var door: Vector2i = buildings[b_id].door
-		var ty := 11 if absi(door.y - 11) <= absi(door.y - 22) else 22
-		var tx := 16 if absi(door.x - 16) <= absi(door.x - 32) else 32
-		var y := door.y
-		while y != ty:
-			y += 1 if ty > y else -1
+		var y := door.y + 1
+		while y < H and grid[y][door.x] != T.PATH:
 			if grid[y][door.x] == T.GRASS:
 				grid[y][door.x] = T.PATH
-		var x := door.x
-		while x != tx:
-			x += 1 if tx > x else -1
-			if grid[ty][x] == T.GRASS:
-				grid[ty][x] = T.PATH
+			y += 1
 
 	# Parque: fuente y bancos.
 	for y in range(_fountain.position.y, _fountain.end.y):
